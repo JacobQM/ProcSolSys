@@ -1,0 +1,113 @@
+canvas {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: Monospace;
+    margin: 0px;
+    overflow: hidden;
+}
+
+#info {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+#generateContainer,
+#speedContainer,
+#starsContainer {
+    position: absolute;
+    left: 0.5%;
+    width: 15%;
+}
+
+#generateContainer {
+    top: 100px;
+}
+
+#speedContainer {
+    top: 150px;
+}
+
+#starsContainer {
+    top: 200px;
+}
+
+#generateText,
+#speedTitle,
+#starsTitle {
+    display: inline-block;
+    margin-right: 10px;
+    color: white;
+}
+
+.slider {
+    width: 100%;
+}
+
+#moonsContainer {
+    position: absolute;
+    top: 350px;
+    left: 10px;
+    color: white;
+    z-index: 1;
+}
+
+#moonsInput {
+    width: 50px;
+    margin-right: 10px;
+}
+
+#clearMoonsBtn,
+#generateMoonsBtn {
+    cursor: pointer;
+    padding: 1px 1px;
+    background-color: #23445D;
+    color: white;
+    border: none;
+    border-radius: 3px;
+}
+
+#clearMoonsBtn:hover,
+#generateMoonsBtn:hover {
+    background-color: #23445D;
+}
+
+#scaleContainer {
+    position: absolute;
+    top: 250px;
+    left: 10px;
+    color: white;
+    z-index: 1;
+}
+
+#scaleContainer label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#scaleContainer input[type="range"] {
+    width: 160%;
+    margin-bottom: 10px;
+}
+
+#sunScaleInput,
+#planetScaleInput {
+    width: 100%;
+    margin-right: 10px;
+}

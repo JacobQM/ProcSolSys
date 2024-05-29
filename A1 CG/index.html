@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <link rel="stylesheet" href="css/layout.css">
+    <title>CG Labs</title>
+</head>
+
+<body>
+    <header>
+        <h1>Jacob Bayne - 14328076 - A1 Procedural Generation</h1>
+    </header>
+
+    <div id="info">
+    </div>
+    <div id="generateContainer">
+        <span id="generateText">Generate Planets (0)</span>
+        <input type="range" min="0" max="7" value="0" class="slider" id="planetSlider">
+    </div>
+    <div id="speedContainer">
+        <span id="speedTitle">Speed </span>:
+        <input type="range" min="0" max="100" value="50" class="slider" id="speedSlider">
+    </div>
+    <div id="starsContainer">
+        <span id="starsTitle">Stars (On)</span>:
+        <input type="range" min="0" max="1" value="1" step="1" class="slider" id="starsSlider">
+    </div>
+    <div id="moonsContainer">
+        <label for="moonsInput">Number of Moons:</label>
+        <input type="number" id="moonsInput" min="0" step="1">
+        <button id="addMoonsBtn">Add Moons</button>
+        <button id="removeMoonsBtn">Remove Moons</button>
+    </div>
+    <div id="scaleContainer">
+        <label for="sunScaleInput">Sun Scale </label>
+        <input type="range" min="0.01" max="5" value="2.5" step="0.01" class="slider" id="sunScaleInput">
+        <label for="planetScaleInput">Planet Scale</label>
+        <input type="range" min="0.01" max="3" value="1.5" step="0.01" class="slider" id="planetScaleInput">
+    </div>
+    <script type='x-shader/x-vertex' id='vertexShader'>
+        attribute float alpha; varying float vAlpha; void main() { vAlpha = alpha; vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 ); gl_PointSize = 2.0; gl_Position = projectionMatrix * mvPosition; }
+    </script>
+
+    <script type='x-shader/x-fragment' id='fragmentShader'>
+        uniform vec3 color; varying float vAlpha; void main() { gl_FragColor = vec4( color, vAlpha ); }
+    </script>
+
+    <script>
+
+        function generatePlanets() {
+            var sliderValue = parseInt(document.getElementById("planetSlider").value);
+
+            if (sliderValue === 0) {
+                // Clear all generated planets when scrollbar is at 0
+                while (planets.length > 0) {
+                    var planetToRemove = planets.pop();
+                    scene.remove(planetToRemove);
+                    removeMoons(planetToRemove); // Remove moons associated with the removed planet
+                }
+            } else if (sliderValue < planets.length) {
+                // Remove excess planets when scrolling down
+                while (planets.length > sliderValue) {
+                    var planetToRemove = planets.pop();
+                    scene.remove(planetToRemove);
+                    removeMoons(planetToRemove); // Remove moons associated with the removed planet
+                }
+            } else {
+                // Add new planets when scrolling up
+                while (planets.length < sliderValue) {
+                    var newPlanet = createRandomPlanet();
+                    planets.push(newPlanet);
+                    scene.add(newPlanet);
+                }
+            }
+
+            // Update the planet counter text
+            updatePlanetCounter();
+        }
+
+        function updatePlanetCounter() {
+            var sliderValue = document.getElementById("planetSlider").value;
+            document.getElementById("generateText").textContent = "Generate Planets (" + sliderValue + ")";
+        }
+
+        document.getElementById("planetSlider").addEventListener("input", function () {
+            generatePlanets();
+        });
+
+        // Event listener for the scrollbar input event
+        document.getElementById("planetSlider").addEventListener("input", function () {
+            updatePlanetCounter();
+            generatePlanets();
+        });
+
+        function updateSpeedTitle() {
+            var speedSlider = document.getElementById("speedSlider");
+            var speedValue = speedSlider.value;
+            document.getElementById("speedTitle").textContent = "Speed (" + speedValue + ")";
+        }
+
+        // Event listener for the speed slider
+        document.getElementById("speedSlider").addEventListener("input", function () {
+            updateSpeed();
+            updateSpeedTitle();
+        });
+
+        // Update the title of the stars slider dynamically based on its value
+        function updateStarsTitle() {
+            var starsSlider = document.getElementById("starsSlider");
+            var starsValue = starsSlider.value;
+            var starsText = starsValue == 1 ? "On" : "Off";
+            document.getElementById("starsTitle").textContent = "Stars (" + starsText + ")";
+        }
+
+        // Event listener for the stars slider
+        document.getElementById("starsSlider").addEventListener("input", function () {
+            updateStars();
+            updateStarsTitle();
+        });
+
+        var starFieldVisible = true;
+        function updateStars() {
+            var starsSlider = document.getElementById("starsSlider");
+            starFieldVisible = starsSlider.value == "0";
+            starField.visible = !starFieldVisible;
+        }
+
+        document.getElementById("addMoonsBtn").addEventListener("click", function () {
+            addMoons();
+        });
+
+        document.getElementById("removeMoonsBtn").addEventListener("click", function () {
+            removeMoons();
+        });
+
+        function generateMoons() {
+            var moonsInput = document.getElementById("moonsInput");
+            var totalNumberOfMoons = parseInt(moonsInput.value);
+
+            // Clear existing moons
+            moons.forEach(function (moon) {
+                scene.remove(moon);
+            });
+            moons = [];
+
+            // Calculate the average number of moons per planet
+            var averageMoonsPerPlanet = totalNumberOfMoons / planets.length;
+
+            // Iterate through the planets and distribute moons evenly
+            for (var i = 0; i < planets.length; i++) {
+                var planet = planets[i];
+                var numberOfMoonsForPlanet = Math.round(averageMoonsPerPlanet);
+
+                // Adjust the number of moons for the last planet to ensure the total matches
+                if (i === planets.length - 1) {
+                    numberOfMoonsForPlanet = totalNumberOfMoons - moons.length;
+                }
+
+                // Generate moons for the current planet
+                for (var j = 0; j < numberOfMoonsForPlanet; j++) {
+                    var newMoon = createRandomMoon(planet);
+                    planet.add(newMoon);
+                    moons.push(newMoon);
+                }
+            }
+        }
+
+        function addMoons() {
+            var moonsInput = document.getElementById("moonsInput");
+            var numberOfMoons = parseInt(moonsInput.value);
+
+            // Generate new moons based on the entered value
+            if (numberOfMoons > 0) {
+                for (var i = 0; i < numberOfMoons; i++) {
+                    var randomPlanetIndex = Math.floor(Math.random() * planets.length);
+                    var randomPlanet = planets[randomPlanetIndex];
+                    var newMoon = createRandomMoon(randomPlanet);
+                    randomPlanet.add(newMoon);
+                    moons.push(newMoon);
+                }
+            }
+        }
+
+        function removeMoons() {
+            var moonsInput = document.getElementById("moonsInput");
+            var numberOfMoonsToRemove = parseInt(moonsInput.value);
+
+            if (numberOfMoonsToRemove <= 0) {
+                return; // No moons to remove
+            }
+
+            // Remove the specified number of moons
+            for (var i = 0; i < numberOfMoonsToRemove; i++) {
+                if (moons.length > 0) {
+                    var moonToRemove = moons.pop(); // Remove the last moon from the array
+                    // Ensure scene is defined and remove moon from scene
+                    if (moonToRemove.parent) {
+                        moonToRemove.parent.remove(moonToRemove); // Remove the moon from its parent
+                    }
+                } else {
+                    break; // No more moons to remove
+                }
+            }
+        }
+
+        document.getElementById("sunScaleInput").addEventListener("input", function () {
+            sunScale = parseFloat(document.getElementById("sunScaleInput").value);
+            sun.scale.set(sunScale, sunScale, sunScale);
+        });
+
+        document.getElementById("planetScaleInput").addEventListener("input", function () {
+            planetScale = parseFloat(document.getElementById("planetScaleInput").value);
+            planets.forEach(function (planet) {
+                planet.scale.set(planetScale, planetScale, planetScale);
+            });
+        });
+
+    </script>
+
+    <script src="labs/A1/setup.js"></script>
+    <script src="labs/A1/build.js"></script>
+    <script src="labs/A1/animate.js"></script>
+    <script src="labs/A1/run.js"></script>
+</body>
+
+</html>
